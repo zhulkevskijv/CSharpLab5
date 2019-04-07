@@ -1,4 +1,5 @@
-﻿using Lab5.Tools.Navigation;
+﻿using System;
+using Lab5.Tools.Navigation;
 
 namespace Lab5.Tools.Managers
 {
@@ -7,7 +8,7 @@ namespace Lab5.Tools.Managers
 
         private static readonly object Locker = new object();
         private static NavigationManager _instance;
-
+        
         internal static NavigationManager Instance
         {
             get
@@ -36,7 +37,10 @@ namespace Lab5.Tools.Managers
         internal void Navigate(ViewType viewType)
         {
             _navigationModel.Navigate(viewType);
+            NavigationPerformed?.Invoke(this, null);
         }
+
+        public event EventHandler NavigationPerformed;
 
 
     }

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using Lab5.Tools.Managers;
 using Lab5.Tools.Navigation;
@@ -28,6 +29,12 @@ namespace Lab5
         {
             NavigationManager.Instance.Initialize(new InitializationNavigationModel(this));
             NavigationManager.Instance.Navigate(ViewType.TaskManager);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            StationManager.CloseApp();
         }
     }
 }

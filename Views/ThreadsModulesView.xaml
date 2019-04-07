@@ -21,7 +21,7 @@
                   Width="Auto">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Thread ID" Binding="{Binding Id}" IsReadOnly="True"></DataGridTextColumn>
-                <DataGridTextColumn Header="CPU Usage" Binding="{Binding ThreadState}"  IsReadOnly="True"></DataGridTextColumn>
+                <DataGridTextColumn Header="Thread State" Binding="{Binding ThreadState}"  IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="Thread number" Binding="{Binding StartTime}" IsReadOnly="True"></DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
@@ -29,8 +29,9 @@
                   Width="Auto">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Module Name" Binding="{Binding ModuleName}" IsReadOnly="True"></DataGridTextColumn>
-                <DataGridTextColumn Header="" Binding="{Binding FileName}"  IsReadOnly="True"></DataGridTextColumn>
+                <DataGridTextColumn Header="File path" Binding="{Binding FileName}"  IsReadOnly="True"></DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
+        <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Back" Command="{Binding BackCommand}" Height="40" Width="300" FontSize="22" Margin="20,0"></Button>
     </Grid>
 </UserControl>

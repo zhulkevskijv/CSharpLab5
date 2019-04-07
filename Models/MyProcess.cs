@@ -1,44 +1,50 @@
 ﻿using System;
-using System.CodeDom;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Management;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Lab5.Properties;
 
 namespace Lab5.Models
 {
-    class MyProcess
+    class MyProcess : INotifyPropertyChanged
     {
         #region Fields
 
-        private Process _process;
-        private readonly string _name;
-        private readonly int _id;
-        private readonly DateTime _startTime;
-        private readonly string _filePath;
-        private readonly double _cpu;
-        private readonly double _ramPercent;
-        private readonly long _ram;
-        private readonly int _threadNumber;
-        private PerformanceCounter _cpuCounter;
-        private static long _wholeRam;
+        private double _cpu;
+        private double _ramPercent;
+        private long _ram;
+        private readonly PerformanceCounter _cpuCounter;
+        private readonly PerformanceCounter _ramCounter;
+        
+        private static readonly long WholeRam;
 
         #endregion
 
         #region Constructor
 
+        static MyProcess()
+        {
+            string Query = "SELECT Capacity FROM Win32_PhysicalMemory";
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(Query);
+            UInt64 capacity = 0;
+            foreach (var wniPart in searcher.Get())
+            {
+                capacity += Convert.ToUInt64(wniPart.Properties["Capacity"].Value);
+            }
+            WholeRam = (long)capacity / 1024;
+        }
+
         internal MyProcess(Process process)
         {
-            _process = process;
-            _name = process.ProcessName;
-            _id = process.Id;
-            _threadNumber = process.Threads.Count;
+            ProcessOrigin = process;
+            Name = process.ProcessName;
+            Id = process.Id;
+            Responding = process.Responding ? "Active" :"No Response";
+           ThreadNumber = process.Threads.Count;
             try
             {
-                _startTime = process.StartTime;
+                StartTime = process.StartTime;
             }
             catch (Exception)
             {
@@ -46,88 +52,110 @@ namespace Lab5.Models
             }
             try
             {
-                _filePath = process.MainModule.FileName;
+                FilePath = process.MainModule.FileName;
             }
             catch (Exception)
             {
-                _filePath = "";
+                FilePath = "Can't get file path";
             }
             try
             {
-                _cpuCounter = new PerformanceCounter("Process", "% Processor Time", _name);
-                _cpu = _cpuCounter.NextValue();
+                _cpuCounter = new PerformanceCounter("Process", "% Processor Time", Name);
+                _cpu = _cpuCounter.NextValue()/Environment.ProcessorCount/100f;
             }
             catch (Exception)
             {
                 _cpu = 0;
             }
-            PerformanceCounter ramCounter = new PerformanceCounter("Process", "Working Set - Private", _name);
-            _ram = Convert.ToInt64(ramCounter.NextValue()) / 1024;
-            //_ram=process.PrivateMemorySize64/1024;
-            string Query = "SELECT Capacity FROM Win32_PhysicalMemory";
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(Query);
-            UInt64 capacity = 0;
-            foreach (ManagementObject WniPART in searcher.Get())
+            
+            try
             {
-                capacity += Convert.ToUInt64(WniPART.Properties["Capacity"].Value);
+                _ramCounter = new PerformanceCounter("Process", "Working Set - Private", Name);
+                _ram = Convert.ToInt64(_ramCounter.NextValue()) / 1024;
+                _ramPercent = _ram / (double)WholeRam;
             }
-            _wholeRam = (long)capacity / 1024;
-            _ramPercent = _ram / (double)_wholeRam;
+            catch (Exception)
+            {
+                _ram = 0;
+                _ramPercent = 0;
+            }
+
         }
 
         #endregion
 
         #region Properties
-        public string Name
-        {
-            get { return _name; }
-        }
+        public string Name { get; }
 
-        public int Id
-        {
-            get { return _id; }
-        }
+        public int Id { get; }
 
-        public DateTime StartTime
-        {
-            get { return _startTime; }
-        }
+        public DateTime StartTime { get; }
 
-        public string FilePath
-        {
-            get { return _filePath; }
-        }
+        public string FilePath { get; }
 
         public double Cpu
         {
             get { return _cpu; }
+            private set
+            {
+                _cpu = value;
+                OnPropertyChanged();
+            }
         }
 
-        public double Ram
+        public long Ram
         {
             get { return _ram; }
+            private set
+            {
+                _ram = value;
+                OnPropertyChanged();
+            }
         }
+
+        public string Responding { get; }
 
         public double RamPercent
         {
-            get { return _ramPercent; }
+            get => _ramPercent;
+            private set
+            {
+                _ramPercent = value;
+                OnPropertyChanged();
+            }
         }
-        public int ThreadNumber
-        {
-            get { return _threadNumber; }
-        }
+        public int ThreadNumber { get; }
 
-        public Process ProcessOrigin
-        {
-            get { return _process; }
-        }
+        public Process ProcessOrigin { get; }
 
         #endregion
 
 
         public void Terminate()
         {
-            _process.Kill();
+            ProcessOrigin.Kill();
+        }
+
+        public void UpdateMeta()
+        {
+            try
+            {
+                Cpu = _cpuCounter.NextValue()/Environment.ProcessorCount/100f;
+            }
+            catch (Exception)
+            {
+                Cpu = 0;
+            }
+            try
+            {
+                Ram = Convert.ToInt64(_ramCounter.NextValue()) / 1024;
+                RamPercent = _ram / (double)WholeRam;
+            }
+            catch (Exception)
+            {
+                Ram = 0;
+                RamPercent = 0;
+            }
         }
 
         #region INotifyPropertyChanged
@@ -139,5 +167,7 @@ namespace Lab5.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
+
+       
     }
 }

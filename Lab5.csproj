@@ -42,6 +42,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -82,7 +83,6 @@
     </Compile>
     <Compile Include="Tools\Navigation\BaseNavigationModel.cs" />
     <Compile Include="Tools\BaseViewModel.cs" />
-    <Compile Include="Tools\FileFolderHelper.cs" />
     <Compile Include="Tools\Navigation\IContentOwner.cs" />
     <Compile Include="Tools\ILoaderOwner.cs" />
     <Compile Include="Tools\Navigation\INavigatable.cs" />

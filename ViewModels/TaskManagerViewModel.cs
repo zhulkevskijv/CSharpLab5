@@ -1,14 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
+using System.Windows.Data;
+using System.Windows.Documents;
 using Lab5.Models;
 using Lab5.Tools;
 using Lab5.Tools.Managers;
 using Lab5.Tools.Navigation;
-
 
 namespace Lab5.ViewModels
 {
@@ -23,16 +26,27 @@ namespace Lab5.ViewModels
         private RelayCommand<object> _sortDescCommand;
         private RelayCommand<object> _showModulesThreadsCommand;
         private RelayCommand<object> _openDirCommand;
+        private Thread _workingThreadList;
+        private Thread _workingThreadMeta;
+        private readonly CancellationToken _token;
+        private readonly CancellationTokenSource _tokenSource;
+        private readonly object _locker;
         #endregion 
 
         #region Constructor
         internal TaskManagerViewModel()
         {
+            _locker = new object();
             _myProcesses = new ObservableCollection<MyProcess>();
             foreach (var process in Process.GetProcesses())
             {
                 _myProcesses.Add(new MyProcess(process));
             }
+            _tokenSource = new CancellationTokenSource();
+            _token = _tokenSource.Token;
+            StartWorkingThreads();
+            StationManager.StopThreads += StopWorkingThreads;
+            BindingOperations.EnableCollectionSynchronization(_myProcesses, _locker);
         }
         #endregion
 
@@ -40,7 +54,7 @@ namespace Lab5.ViewModels
 
         public int IndexFilter
         {
-            get { return _indexFilter; }
+            get => _indexFilter;
             set
             {
                 _indexFilter = value;
@@ -53,14 +67,14 @@ namespace Lab5.ViewModels
             get => _myProcesses;
             private set
             {
-                _myProcesses = value;
                 OnPropertyChanged();
+                _myProcesses = value;
             }
         }
 
         public MyProcess SelectedProcess
         {
-            get { return _selectedProcess; }
+            get => _selectedProcess;
             set
             {
                 OnPropertyChanged();
@@ -97,23 +111,13 @@ namespace Lab5.ViewModels
             }
         }
 
-        public RelayCommand<object> SortAscCommand
-        {
-            get
-            {
-                return _sortAscCommand ??
-                       (_sortAscCommand = new RelayCommand<object>(SortAscImplementation));
-            }
-        }
+        public RelayCommand<object> SortAscCommand =>
+            _sortAscCommand ??
+            (_sortAscCommand = new RelayCommand<object>(SortAscImplementation));
 
-        public RelayCommand<object> SortDescCommand
-        {
-            get
-            {
-                return _sortDescCommand ??
-                       (_sortDescCommand = new RelayCommand<object>(SortDescImplementation));
-            }
-        }
+        public RelayCommand<object> SortDescCommand =>
+            _sortDescCommand ??
+            (_sortDescCommand = new RelayCommand<object>(SortDescImplementation));
 
         #endregion
 
@@ -127,8 +131,12 @@ namespace Lab5.ViewModels
 
         private void TerminateImplementation(object obj)
         {
-            _selectedProcess.Terminate();
-            _myProcesses.Remove(_selectedProcess);
+            lock (_locker)
+            {
+                _selectedProcess.Terminate();
+                _myProcesses.Remove(_selectedProcess);
+                OnPropertyChanged($@"MyProcesses");
+            }
         }
 
         private void ShowModulesThreadsImplementation(object obj)
@@ -141,7 +149,7 @@ namespace Lab5.ViewModels
         {
             try
             {
-                ProcessStartInfo startInfo = new ProcessStartInfo($"explorer.exe", Path.GetDirectoryName(_selectedProcess.FilePath));
+                ProcessStartInfo startInfo = new ProcessStartInfo("explorer.exe", Path.GetDirectoryName(_selectedProcess.FilePath));
                 Process.Start(startInfo);
             }
             catch (DirectoryNotFoundException)
@@ -214,6 +222,117 @@ namespace Lab5.ViewModels
             OnPropertyChanged($"MyProcesses");
         }
 
+        #endregion
+
+        #region Update
+        private void StartWorkingThreads()
+        {
+            _workingThreadList = new Thread(WorkingThreadListProcess);
+            _workingThreadMeta = new Thread(WorkingThreadMetaProcess);
+            _workingThreadMeta.Start();
+            _workingThreadList.Start();
+
+        }
+
+        private void WorkingThreadMetaProcess()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            while (!_token.IsCancellationRequested)
+            {
+                stopwatch.Restart();
+                lock (_locker)
+                {
+                    foreach (var myProcess in _myProcesses)
+                    {
+                        myProcess.UpdateMeta();
+                        if (_token.IsCancellationRequested)
+                            break;
+                    }
+                    OnPropertyChanged($"MyProcesses");
+                }
+
+                if (stopwatch.ElapsedMilliseconds < 2000)
+                {
+                    Thread.Sleep(2000 - (int) stopwatch.ElapsedMilliseconds);
+                    Console.WriteLine("THIS IS " + stopwatch.ElapsedMilliseconds);
+                }
+
+                if (_token.IsCancellationRequested)
+                    break;
+            }
+        }
+        private void WorkingThreadListProcess()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            while (!_token.IsCancellationRequested)
+            {
+                stopwatch.Restart();
+                //var tempListProcesses = (from pr in Process.GetProcesses() select new MyProcess(pr)).ToArray();
+                //tempListProcesses = tempListProcesses.Except(_myProcesses).ToArray();
+                List<MyProcess> listToRemove = new List<MyProcess>();
+                foreach (MyProcess myProcess in _myProcesses)
+                {
+                    try
+                    {
+                        if (myProcess.ProcessOrigin.HasExited)
+                        {
+                            listToRemove.Add(myProcess);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
+                if (_token.IsCancellationRequested)
+                    break;
+                lock (_locker)
+                {
+                    foreach (MyProcess myProcess in listToRemove)
+                    {
+                        try
+                        {
+                            _myProcesses.Remove(myProcess);
+                        }
+                        catch (Exception e)
+                        {
+                            // ignored
+                        }
+                    }
+
+                    //foreach (MyProcess tempListProcess in tempListProcesses)
+                    //{
+                        
+                    //    try
+                    //    {
+                    //        _myProcesses.Add(tempListProcess);
+                    //    }
+                    //    catch (Exception e)
+                    //    {
+                    //        // ignored
+                    //    }
+                    //}
+                    if (_token.IsCancellationRequested)
+                        break;
+                    OnPropertyChanged($"MyProcesses");
+                }
+                if(stopwatch.ElapsedMilliseconds < 5000)
+                Thread.Sleep(5000 - (int)stopwatch.ElapsedMilliseconds);
+                Console.WriteLine(stopwatch.ElapsedMilliseconds);
+                if (_token.IsCancellationRequested)
+                    break;
+            }
+        }
+        private void StopWorkingThreads()
+        {
+            _tokenSource.Cancel();
+            _workingThreadList.Join(2000);
+            _workingThreadList.Abort();
+            _workingThreadList = null;
+            _workingThreadMeta.Join(2000);
+            _workingThreadMeta.Abort();
+            _workingThreadMeta = null;
+        }
         #endregion
     }
 }

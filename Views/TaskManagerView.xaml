@@ -36,10 +36,11 @@
         <Button  Grid.Column="1" Grid.Row="0" Width="200" Height="35" Margin="10,0" Content="Sort Asc" FontSize="20" Command="{Binding SortAscCommand}"></Button>
         <Button Grid.Row="0" Grid.Column="2" Width="200" Height="35" Margin="10,0" Content="Sort Desc" FontSize="20" Command="{Binding SortDescCommand}"></Button>
         <DataGrid Name="DataGrid" Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0" ItemsSource="{Binding MyProcesses, Mode=OneWay}" SelectedItem ="{Binding SelectedProcess}"  AutoGenerateColumns="False"
-                  BorderBrush="#FF9CBDDC" Width="Auto" CanUserSortColumns="False" >
+                  BorderBrush="#FF9CBDDC" Width="Auto">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Process name" Binding="{Binding Name}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="Process ID" Binding="{Binding Id}" IsReadOnly="True"></DataGridTextColumn>
+                <DataGridTextColumn Header="Process state" Binding="{Binding Responding}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="CPU Usage" Binding="{Binding Cpu, StringFormat=0.00%}"  IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="RAM Usage" Binding="{Binding RamPercent, StringFormat=0.00%}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="RAM Used" Binding="{Binding Ram, StringFormat=# ### KB}" IsReadOnly="True"></DataGridTextColumn>

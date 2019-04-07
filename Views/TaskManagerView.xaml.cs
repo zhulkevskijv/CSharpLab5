@@ -5,7 +5,7 @@ using Lab5.ViewModels;
 namespace Lab5.Views
 {
     /// <summary>
-    /// Логика взаимодействия для PersonListView.xaml
+    /// Логика взаимодействия для TaskManagerView.xaml
     /// </summary>
     public partial class TaskManagerView : UserControl, INavigatable
     {

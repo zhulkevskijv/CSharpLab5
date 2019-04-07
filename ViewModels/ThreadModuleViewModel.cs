@@ -1,5 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Windows;
 using Lab5.Models;
 using Lab5.Tools;
 using Lab5.Tools.Managers;
@@ -13,21 +15,43 @@ namespace Lab5.ViewModels
         private ObservableCollection<ProcessThread> _threads;
         private ObservableCollection<ProcessModule> _modules;
         private RelayCommand<object> _backCommand;
-
         internal ThreadModuleViewModel()
+        {
+            
+            NavigationManager.Instance.NavigationPerformed += Instance_NavigationPerformed; ;
+            
+        }
+
+        private void Instance_NavigationPerformed(object sender, EventArgs e)
         {
             _myProcess = StationManager.CurrentProcess;
             _threads = new ObservableCollection<ProcessThread>();
             _modules = new ObservableCollection<ProcessModule>();
-            foreach (ProcessThread processOriginThread in _myProcess.ProcessOrigin.Threads)
+            try
             {
-                _threads.Add(processOriginThread);
+                foreach (ProcessThread processOriginThread in _myProcess.ProcessOrigin.Threads)
+                {
+                    _threads.Add(processOriginThread);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Threads aren't available!");
             }
 
-            foreach (ProcessModule processOriginModule in _myProcess.ProcessOrigin.Modules)
+            try
             {
-                _modules.Add(processOriginModule);
+                foreach (ProcessModule processOriginModule in _myProcess.ProcessOrigin.Modules)
+                {
+                    _modules.Add(processOriginModule);
+                }
             }
+            catch (Exception)
+            {
+                MessageBox.Show("Modules aren't available!");
+            }
+            OnPropertyChanged($"Threads");
+            OnPropertyChanged($"Modules");
         }
 
         public RelayCommand<object> BackCommand
@@ -48,6 +72,7 @@ namespace Lab5.ViewModels
 
         private void BackImplementation(object obj)
         {
+            StationManager.CurrentProcess = _myProcess;
             NavigationManager.Instance.Navigate(ViewType.TaskManager);
         }
     }
