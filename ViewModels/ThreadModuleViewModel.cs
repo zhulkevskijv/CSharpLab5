@@ -17,9 +17,7 @@ namespace Lab5.ViewModels
         private RelayCommand<object> _backCommand;
         internal ThreadModuleViewModel()
         {
-            
             NavigationManager.Instance.NavigationPerformed += Instance_NavigationPerformed; ;
-            
         }
 
         private void Instance_NavigationPerformed(object sender, EventArgs e)

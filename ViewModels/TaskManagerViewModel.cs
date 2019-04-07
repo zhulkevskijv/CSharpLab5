@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Documents;
 using Lab5.Models;
 using Lab5.Tools;
 using Lab5.Tools.Managers;
@@ -253,8 +253,8 @@ namespace Lab5.ViewModels
 
                 if (stopwatch.ElapsedMilliseconds < 2000)
                 {
-                    Thread.Sleep(2000 - (int) stopwatch.ElapsedMilliseconds);
-                    Console.WriteLine("THIS IS " + stopwatch.ElapsedMilliseconds);
+                    Thread.Sleep(2000 - (int)stopwatch.ElapsedMilliseconds);
+                    Console.WriteLine($@"THIS IS {stopwatch.ElapsedMilliseconds}");
                 }
 
                 if (_token.IsCancellationRequested)
@@ -266,23 +266,32 @@ namespace Lab5.ViewModels
             Stopwatch stopwatch = new Stopwatch();
             while (!_token.IsCancellationRequested)
             {
+
                 stopwatch.Restart();
-                //var tempListProcesses = (from pr in Process.GetProcesses() select new MyProcess(pr)).ToArray();
-                //tempListProcesses = tempListProcesses.Except(_myProcesses).ToArray();
                 List<MyProcess> listToRemove = new List<MyProcess>();
+                List<MyProcess> tempListProcesses = new List<MyProcess>();
+                foreach (Process process in Process.GetProcesses())
+                {
+                    bool found = false;
+                    foreach (MyProcess myProcess in _myProcesses)
+                    {
+                        if (myProcess.Id == process.Id)
+                            found = true;
+                    }
+                    if (!found)
+                        tempListProcesses.Add(new MyProcess(process));
+                }
+
                 foreach (MyProcess myProcess in _myProcesses)
                 {
-                    try
+                    bool found = false;
+                    foreach (Process process in Process.GetProcesses())
                     {
-                        if (myProcess.ProcessOrigin.HasExited)
-                        {
-                            listToRemove.Add(myProcess);
-                        }
+                        if (myProcess.Id == process.Id)
+                            found = true;
                     }
-                    catch (Exception)
-                    {
-                        // ignored
-                    }
+                    if (!found)
+                        listToRemove.Add(myProcess);
                 }
                 if (_token.IsCancellationRequested)
                     break;
@@ -294,30 +303,30 @@ namespace Lab5.ViewModels
                         {
                             _myProcesses.Remove(myProcess);
                         }
-                        catch (Exception e)
+                        catch (Exception)
                         {
                             // ignored
                         }
                     }
 
-                    //foreach (MyProcess tempListProcess in tempListProcesses)
-                    //{
-                        
-                    //    try
-                    //    {
-                    //        _myProcesses.Add(tempListProcess);
-                    //    }
-                    //    catch (Exception e)
-                    //    {
-                    //        // ignored
-                    //    }
-                    //}
+                    foreach (MyProcess tempListProcess in tempListProcesses)
+                    {
+
+                        try
+                        {
+                            _myProcesses.Add(tempListProcess);
+                        }
+                        catch (Exception)
+                        {
+                            // ignored
+                        }
+                    }
                     if (_token.IsCancellationRequested)
                         break;
                     OnPropertyChanged($"MyProcesses");
                 }
-                if(stopwatch.ElapsedMilliseconds < 5000)
-                Thread.Sleep(5000 - (int)stopwatch.ElapsedMilliseconds);
+                if (stopwatch.ElapsedMilliseconds < 5000)
+                    Thread.Sleep(5000 - (int)stopwatch.ElapsedMilliseconds);
                 Console.WriteLine(stopwatch.ElapsedMilliseconds);
                 if (_token.IsCancellationRequested)
                     break;

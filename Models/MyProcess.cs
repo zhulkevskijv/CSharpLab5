@@ -7,13 +7,14 @@ using Lab5.Properties;
 
 namespace Lab5.Models
 {
-    class MyProcess : INotifyPropertyChanged
+    class MyProcess : INotifyPropertyChanged, IEquatable<MyProcess>
     {
         #region Fields
 
         private double _cpu;
         private double _ramPercent;
         private long _ram;
+        private string _responding;
         private readonly PerformanceCounter _cpuCounter;
         private readonly PerformanceCounter _ramCounter;
         
@@ -41,7 +42,7 @@ namespace Lab5.Models
             Name = process.ProcessName;
             Id = process.Id;
             Responding = process.Responding ? "Active" :"No Response";
-           ThreadNumber = process.Threads.Count;
+            ThreadNumber = process.Threads.Count;
             try
             {
                 StartTime = process.StartTime;
@@ -113,7 +114,15 @@ namespace Lab5.Models
             }
         }
 
-        public string Responding { get; }
+        public string Responding
+        {
+            get => _responding;
+            private set
+            {
+                _responding = value;
+                OnPropertyChanged();
+            }
+        }
 
         public double RamPercent
         {
@@ -138,6 +147,7 @@ namespace Lab5.Models
 
         public void UpdateMeta()
         {
+            Responding = ProcessOrigin.Responding ? "Active" : "No Response";
             try
             {
                 Cpu = _cpuCounter.NextValue()/Environment.ProcessorCount/100f;
@@ -168,6 +178,10 @@ namespace Lab5.Models
         }
         #endregion
 
-       
+        
+        public bool Equals(MyProcess other)
+        {
+            return  other != null && this.Id == other.Id;
+        }
     }
 }

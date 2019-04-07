@@ -84,12 +84,9 @@
     <Compile Include="Tools\Navigation\BaseNavigationModel.cs" />
     <Compile Include="Tools\BaseViewModel.cs" />
     <Compile Include="Tools\Navigation\IContentOwner.cs" />
-    <Compile Include="Tools\ILoaderOwner.cs" />
     <Compile Include="Tools\Navigation\INavigatable.cs" />
     <Compile Include="Tools\Navigation\INavigationModel.cs" />
     <Compile Include="Tools\Navigation\InitializationNavigationModel.cs" />
-    <Compile Include="Tools\Managers\LoaderManager.cs" />
-    <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

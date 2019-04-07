@@ -8,6 +8,5 @@
         Title="MainWindow" Height="600" Width="750">
     <Grid>
         <ContentControl Name="_contentControl" IsEnabled="{Binding IsControlEnabled, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"></ContentControl>
-        <fa:ImageAwesome Name="Loader" Icon="Refresh" Spin="True" Visibility="{Binding LoaderVisibility, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
     </Grid>
 </Window>

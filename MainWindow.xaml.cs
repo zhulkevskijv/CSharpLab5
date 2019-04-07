@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using Lab5.Tools.Managers;
 using Lab5.Tools.Navigation;
-using Lab5.ViewModels;
 
 namespace Lab5
 {
@@ -12,16 +11,12 @@ namespace Lab5
     /// </summary>
     public partial class MainWindow : Window, IContentOwner
     {
-        public ContentControl ContentControl
-        {
-            get { return _contentControl; }
-        }
+        public ContentControl ContentControl => _contentControl;
 
 
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
             InitializeApplication();
         }
 
