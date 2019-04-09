@@ -7,17 +7,16 @@ using Lab5.Properties;
 
 namespace Lab5.Models
 {
-    class MyProcess : INotifyPropertyChanged, IEquatable<MyProcess>
+    class MyProcess : INotifyPropertyChanged
     {
         #region Fields
 
         private double _cpu;
         private double _ramPercent;
         private long _ram;
-        private string _responding;
         private readonly PerformanceCounter _cpuCounter;
         private readonly PerformanceCounter _ramCounter;
-        
+        private bool _ok = true;
         private static readonly long WholeRam;
 
         #endregion
@@ -41,7 +40,6 @@ namespace Lab5.Models
             ProcessOrigin = process;
             Name = process.ProcessName;
             Id = process.Id;
-            Responding = process.Responding ? "Active" :"No Response";
             ThreadNumber = process.Threads.Count;
             try
             {
@@ -59,28 +57,9 @@ namespace Lab5.Models
             {
                 FilePath = "Can't get file path";
             }
-            try
-            {
-                _cpuCounter = new PerformanceCounter("Process", "% Processor Time", Name);
-                _cpu = _cpuCounter.NextValue()/Environment.ProcessorCount/100f;
-            }
-            catch (Exception)
-            {
-                _cpu = 0;
-            }
-            
-            try
-            {
-                _ramCounter = new PerformanceCounter("Process", "Working Set - Private", Name);
-                _ram = Convert.ToInt64(_ramCounter.NextValue()) / 1024;
-                _ramPercent = _ram / (double)WholeRam;
-            }
-            catch (Exception)
-            {
-                _ram = 0;
-                _ramPercent = 0;
-            }
-
+            _cpuCounter = new PerformanceCounter("Process", "% Processor Time", Name);
+            _ramCounter = new PerformanceCounter("Process", "Working Set - Private", Name);
+            UpdateMeta();
         }
 
         #endregion
@@ -114,16 +93,6 @@ namespace Lab5.Models
             }
         }
 
-        public string Responding
-        {
-            get => _responding;
-            private set
-            {
-                _responding = value;
-                OnPropertyChanged();
-            }
-        }
-
         public double RamPercent
         {
             get => _ramPercent;
@@ -145,26 +114,32 @@ namespace Lab5.Models
             ProcessOrigin.Kill();
         }
 
+
+
         public void UpdateMeta()
         {
-            Responding = ProcessOrigin.Responding ? "Active" : "No Response";
-            try
+            if (_ok)
             {
-                Cpu = _cpuCounter.NextValue()/Environment.ProcessorCount/100f;
-            }
-            catch (Exception)
-            {
-                Cpu = 0;
-            }
-            try
-            {
-                Ram = Convert.ToInt64(_ramCounter.NextValue()) / 1024;
-                RamPercent = _ram / (double)WholeRam;
-            }
-            catch (Exception)
-            {
-                Ram = 0;
-                RamPercent = 0;
+                try
+                {
+                    Cpu = _cpuCounter.NextValue() / Environment.ProcessorCount / 100f;
+                }
+                catch (Exception)
+                {
+                    Cpu = 0;
+                    _ok = false;
+                }
+                try
+                {
+                    Ram = Convert.ToInt64(_ramCounter.NextValue()) / 1024;
+                    RamPercent = _ram / (double)WholeRam;
+                }
+                catch (Exception)
+                {
+                    Ram = 0;
+                    RamPercent = 0;
+                    _ok = false;
+                }
             }
         }
 
@@ -177,11 +152,5 @@ namespace Lab5.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
-
-        
-        public bool Equals(MyProcess other)
-        {
-            return  other != null && this.Id == other.Id;
-        }
     }
 }

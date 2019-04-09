@@ -14,7 +14,6 @@
             </LinearGradientBrush>
         </Grid.Background>
         <Grid.RowDefinitions>
-            <RowDefinition Height="1*"></RowDefinition>
             <RowDefinition Height="8*"></RowDefinition>
             <RowDefinition Height="1*"></RowDefinition>
         </Grid.RowDefinitions>
@@ -23,24 +22,12 @@
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <ComboBox Width="190" Height="35" FontSize="18" VerticalContentAlignment="Center" SelectedIndex="{Binding IndexFilter}" >
-            <ComboBoxItem Content="Process name" IsSelected="True"></ComboBoxItem>
-            <ComboBoxItem Content="Id"></ComboBoxItem>
-            <ComboBoxItem Content="CPU"></ComboBoxItem>
-            <ComboBoxItem Content="RAM Usage"></ComboBoxItem>
-            <ComboBoxItem Content="RAM Used"></ComboBoxItem>
-            <ComboBoxItem Content="Threads"></ComboBoxItem>
-            <ComboBoxItem Content="File path"></ComboBoxItem>
-            <ComboBoxItem Content="Start time"></ComboBoxItem>
-        </ComboBox>
-        <Button  Grid.Column="1" Grid.Row="0" Width="200" Height="35" Margin="10,0" Content="Sort Asc" FontSize="20" Command="{Binding SortAscCommand}"></Button>
-        <Button Grid.Row="0" Grid.Column="2" Width="200" Height="35" Margin="10,0" Content="Sort Desc" FontSize="20" Command="{Binding SortDescCommand}"></Button>
-        <DataGrid Name="DataGrid" Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0" ItemsSource="{Binding MyProcesses, Mode=OneWay}" SelectedItem ="{Binding SelectedProcess}"  AutoGenerateColumns="False"
+        <DataGrid Name="DataGrid" Grid.Row="0" Grid.ColumnSpan="3" Grid.Column="0" ItemsSource="{Binding MyProcesses, Mode=OneWay}" SelectedItem ="{Binding SelectedProcess}"  AutoGenerateColumns="False"
                   BorderBrush="#FF9CBDDC" Width="Auto">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Process name" Binding="{Binding Name}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="Process ID" Binding="{Binding Id}" IsReadOnly="True"></DataGridTextColumn>
-                <DataGridTextColumn Header="Process state" Binding="{Binding Responding}" IsReadOnly="True"></DataGridTextColumn>
+                <DataGridTextColumn Header="Process state" Binding="{Binding ProcessOrigin.Responding}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="CPU Usage" Binding="{Binding Cpu, StringFormat=0.00%}"  IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="RAM Usage" Binding="{Binding RamPercent, StringFormat=0.00%}" IsReadOnly="True"></DataGridTextColumn>
                 <DataGridTextColumn Header="RAM Used" Binding="{Binding Ram, StringFormat=# ### KB}" IsReadOnly="True"></DataGridTextColumn>
@@ -49,8 +36,8 @@
                 <DataGridTextColumn Header="Start time" Binding="{Binding StartTime}" IsReadOnly="True"></DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
-        <Button Grid.Row="2" Grid.Column="0" Width="200" Height="40" Content="Open in directory" FontSize="20" Command="{Binding OpenDirCommand}"></Button>
-        <Button  Grid.Row="2" Grid.Column="1" Width="200" Height="40" Content="Show modules and Threads" FontSize="15" Command="{Binding ShowModulesThreadsCommand}"></Button>
-        <Button  Grid.Row="2" Grid.Column="2" Width="200" Height="40" Content="Terminate" FontSize="20" Command="{Binding TerminateCommand}" Margin="10,0"></Button>
+        <Button Grid.Row="1" Grid.Column="0" Width="200" Height="40" Content="Open in directory" FontSize="20" Command="{Binding OpenDirCommand}"></Button>
+        <Button  Grid.Row="1" Grid.Column="1" Width="200" Height="40" Content="Show modules and Threads" FontSize="15" Command="{Binding ShowModulesThreadsCommand}"></Button>
+        <Button  Grid.Row="1" Grid.Column="2" Width="200" Height="40" Content="Terminate" FontSize="20" Command="{Binding TerminateCommand}" Margin="10,0"></Button>
     </Grid>
 </UserControl>

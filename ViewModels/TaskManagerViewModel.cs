@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Data;
@@ -22,8 +20,6 @@ namespace Lab5.ViewModels
         private MyProcess _selectedProcess;
         private int _indexFilter;
         private RelayCommand<object> _terminateCommand;
-        private RelayCommand<object> _sortAscCommand;
-        private RelayCommand<object> _sortDescCommand;
         private RelayCommand<object> _showModulesThreadsCommand;
         private RelayCommand<object> _openDirCommand;
         private Thread _workingThreadList;
@@ -42,11 +38,12 @@ namespace Lab5.ViewModels
             {
                 _myProcesses.Add(new MyProcess(process));
             }
+            BindingOperations.EnableCollectionSynchronization(_myProcesses, _locker);
             _tokenSource = new CancellationTokenSource();
             _token = _tokenSource.Token;
             StartWorkingThreads();
             StationManager.StopThreads += StopWorkingThreads;
-            BindingOperations.EnableCollectionSynchronization(_myProcesses, _locker);
+
         }
         #endregion
 
@@ -65,11 +62,6 @@ namespace Lab5.ViewModels
         public ObservableCollection<MyProcess> MyProcesses
         {
             get => _myProcesses;
-            private set
-            {
-                OnPropertyChanged();
-                _myProcesses = value;
-            }
         }
 
         public MyProcess SelectedProcess
@@ -111,14 +103,6 @@ namespace Lab5.ViewModels
             }
         }
 
-        public RelayCommand<object> SortAscCommand =>
-            _sortAscCommand ??
-            (_sortAscCommand = new RelayCommand<object>(SortAscImplementation));
-
-        public RelayCommand<object> SortDescCommand =>
-            _sortDescCommand ??
-            (_sortDescCommand = new RelayCommand<object>(SortDescImplementation));
-
         #endregion
 
         #region CommandImplementation
@@ -157,71 +141,6 @@ namespace Lab5.ViewModels
                 MessageBox.Show($"{Path.GetDirectoryName(_selectedProcess.FilePath)} directory does not exist!");
             }
         }
-
-        private void SortAscImplementation(object obj)
-        {
-            switch (IndexFilter)
-            {
-                case (0):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.Name));
-                    break;
-                case (1):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.Id));
-                    break;
-                case (2):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.Cpu));
-                    break;
-                case (3):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.RamPercent));
-                    break;
-                case (4):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.Ram));
-                    break;
-                case (5):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.ThreadNumber));
-                    break;
-                case (6):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.FilePath));
-                    break;
-                case (7):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderBy(i => i.StartTime));
-                    break;
-            }
-            OnPropertyChanged($"MyProcesses");
-        }
-
-        private void SortDescImplementation(object obj)
-        {
-            switch (IndexFilter)
-            {
-                case (0):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.Name));
-                    break;
-                case (1):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.Id));
-                    break;
-                case (2):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.Cpu));
-                    break;
-                case (3):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.RamPercent));
-                    break;
-                case (4):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.Ram));
-                    break;
-                case (5):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.ThreadNumber));
-                    break;
-                case (6):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.FilePath));
-                    break;
-                case (7):
-                    _myProcesses = new ObservableCollection<MyProcess>(_myProcesses.OrderByDescending(i => i.StartTime));
-                    break;
-            }
-            OnPropertyChanged($"MyProcesses");
-        }
-
         #endregion
 
         #region Update
@@ -240,23 +159,16 @@ namespace Lab5.ViewModels
             while (!_token.IsCancellationRequested)
             {
                 stopwatch.Restart();
-                lock (_locker)
+                //ObservableCollection<MyProcess> toUpdate = new ObservableCollection<MyProcess>(_myProcesses);
+                List<MyProcess> kek = new List<MyProcess>(_myProcesses);
+                foreach (var myProcess in kek)
                 {
-                    foreach (var myProcess in _myProcesses)
-                    {
-                        myProcess.UpdateMeta();
-                        if (_token.IsCancellationRequested)
-                            break;
-                    }
-                    OnPropertyChanged($"MyProcesses");
+                    myProcess.UpdateMeta();
+                    if (_token.IsCancellationRequested)
+                        break;
                 }
-
-                if (stopwatch.ElapsedMilliseconds < 2000)
-                {
-                    Thread.Sleep(2000 - (int)stopwatch.ElapsedMilliseconds);
-                    Console.WriteLine($@"THIS IS {stopwatch.ElapsedMilliseconds}");
-                }
-
+                OnPropertyChanged($"MyProcesses");
+                Console.WriteLine($@"THIS IS {stopwatch.ElapsedMilliseconds}");
                 if (_token.IsCancellationRequested)
                     break;
             }
@@ -266,7 +178,6 @@ namespace Lab5.ViewModels
             Stopwatch stopwatch = new Stopwatch();
             while (!_token.IsCancellationRequested)
             {
-
                 stopwatch.Restart();
                 List<MyProcess> listToRemove = new List<MyProcess>();
                 List<MyProcess> tempListProcesses = new List<MyProcess>();
@@ -277,11 +188,13 @@ namespace Lab5.ViewModels
                     {
                         if (myProcess.Id == process.Id)
                             found = true;
+
                     }
                     if (!found)
                         tempListProcesses.Add(new MyProcess(process));
                 }
-
+                if (_token.IsCancellationRequested)
+                    break;
                 foreach (MyProcess myProcess in _myProcesses)
                 {
                     bool found = false;
@@ -311,7 +224,6 @@ namespace Lab5.ViewModels
 
                     foreach (MyProcess tempListProcess in tempListProcesses)
                     {
-
                         try
                         {
                             _myProcesses.Add(tempListProcess);
@@ -327,7 +239,6 @@ namespace Lab5.ViewModels
                 }
                 if (stopwatch.ElapsedMilliseconds < 5000)
                     Thread.Sleep(5000 - (int)stopwatch.ElapsedMilliseconds);
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
                 if (_token.IsCancellationRequested)
                     break;
             }
